@@ -8,7 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
 import { ArrowRight, Trash2 } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 type ParticipantsSummaryProps = {
   participants: Participant[];
@@ -24,6 +25,7 @@ type Balance = {
 }
 
 export function ParticipantsSummary({ participants, items, addParticipant, removeParticipant }: ParticipantsSummaryProps) {
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
   
   const { balances, grandTotal, settlements } = useMemo(() => {
     const balances = new Map<string, Balance>();
@@ -65,7 +67,7 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
     const debtors = Array.from(balances.entries()).filter(([,b]) => b.net < 0).sort((a,b) => a[1].net - b[1].net);
     const creditors = Array.from(balances.entries()).filter(([,b]) => b.net > 0).sort((a,b) => b[1].net - a[1].net);
 
-    const settlements: {from: string, to: string, amount: number}[] = [];
+    const settlements: {from: string, fromId: string, to: string, amount: number}[] = [];
 
     let debtorIndex = 0;
     let creditorIndex = 0;
@@ -81,6 +83,7 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
 
       settlements.push({
         from: participants.find(p => p.id === debtorId)?.name ?? 'Unknown',
+        fromId: debtorId,
         to: participants.find(p => p.id === creditorId)?.name ?? 'Unknown',
         amount: settlementAmount,
       });
@@ -95,6 +98,12 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
     return { balances, grandTotal, settlements };
   }, [items, participants]);
 
+  const filteredSettlements = useMemo(() => {
+    if (!selectedParticipantId) {
+      return settlements;
+    }
+    return settlements.filter(s => s.fromId === selectedParticipantId);
+  }, [settlements, selectedParticipantId]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
@@ -141,20 +150,35 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
         {settlements.length > 0 && (
           <>
             <Separator />
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h3 className="font-headline text-sm font-medium">How to settle up:</h3>
+              <Select onValueChange={(value) => setSelectedParticipantId(value === 'all' ? null : value)}>
+                 <SelectTrigger>
+                   <SelectValue placeholder="View personal summary..." />
+                 </SelectTrigger>
+                 <SelectContent>
+                   <SelectItem value="all">Show All Settlements</SelectItem>
+                   {participants.map(p => (
+                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                   ))}
+                 </SelectContent>
+              </Select>
               <div className="flex flex-col gap-2 text-sm">
-                {settlements.map((s, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-md bg-secondary">
-                    <span className="font-medium">{s.from}</span>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <ArrowRight className="h-4 w-4"/>
-                       <span className="font-mono text-primary bg-background px-2 py-0.5 rounded-md">{formatCurrency(s.amount)}</span>
-                      <ArrowRight className="h-4 w-4"/>
+                {filteredSettlements.length === 0 && selectedParticipantId ? (
+                   <p className="text-center text-muted-foreground py-4">This person has settled all their debts!</p>
+                ) : (
+                  filteredSettlements.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 rounded-md bg-secondary">
+                      <span className="font-medium">{s.from}</span>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <ArrowRight className="h-4 w-4"/>
+                         <span className="font-mono text-primary bg-background px-2 py-0.5 rounded-md">{formatCurrency(s.amount)}</span>
+                        <ArrowRight className="h-4 w-4"/>
+                      </div>
+                      <span className="font-medium">{s.to}</span>
                     </div>
-                    <span className="font-medium">{s.to}</span>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </>
