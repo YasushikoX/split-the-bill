@@ -130,7 +130,7 @@ export function ParticipantsSummary({ participants, items, addParticipant }: Par
          <Separator />
          <div className="flex justify-between items-center pt-4">
             <p className="text-lg font-bold font-headline">Grand Total</p>
-            <p className="text-lg font-bold font-headline text-accent">{formatCurrency(grandTotal)}</p>
+            <p className="text-lg font-bold font-headline text-accent-foreground">{formatCurrency(grandTotal)}</p>
          </div>
       </CardFooter>
     </Card>

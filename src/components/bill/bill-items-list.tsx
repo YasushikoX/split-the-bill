@@ -72,7 +72,7 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg text-accent w-24 text-right">{formatCurrency(item.price)}</span>
+                      <span className="font-bold text-lg text-accent-foreground w-24 text-right">{formatCurrency(item.price)}</span>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button variant="outline" size="icon" className="h-9 w-9">
