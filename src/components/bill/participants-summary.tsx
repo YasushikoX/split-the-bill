@@ -24,7 +24,7 @@ type Balance = {
 
 export function ParticipantsSummary({ participants, items, addParticipant, removeParticipant }: ParticipantsSummaryProps) {
   
-  const { grandTotal, settlements } = useMemo(() => {
+  const { grandTotal, settlements, balances } = useMemo(() => {
     const balances = new Map<string, Balance>();
     let grandTotal = 0;
 
@@ -91,7 +91,7 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
       if(Math.abs(creditorBalance.net) < 0.01) creditorIndex++;
     }
 
-    return { grandTotal, settlements };
+    return { grandTotal, settlements, balances };
   }, [items, participants]);
 
   const formatCurrency = (amount: number) => {
@@ -113,13 +113,16 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
           <div className="space-y-2 pr-3">
             {participants.map(p => (
               <div key={p.id} className="flex items-center justify-between p-2 rounded-md bg-secondary group">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{p.name}</span>
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="font-medium truncate flex-grow">{p.name}</span>
                 </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeParticipant(p.id)}>
-                  <Trash2 className="h-4 w-4"/>
-                </Button>
+                <div className="flex items-center gap-2">
+                    <span className="font-mono text-sm text-muted-foreground">{formatCurrency(balances.get(p.id)?.consumed ?? 0)}</span>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeParticipant(p.id)}>
+                        <Trash2 className="h-4 w-4"/>
+                    </Button>
+                </div>
               </div>
             ))}
           </div>
