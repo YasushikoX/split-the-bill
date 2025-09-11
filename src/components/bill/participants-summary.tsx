@@ -22,9 +22,17 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
 
   items.forEach(item => {
     grandTotal += item.price;
-    if (item.participantIds.length > 0) {
-      const splitPrice = item.price / item.participantIds.length;
-      item.participantIds.forEach(pId => {
+    let participantIdsForItem = item.participantIds;
+
+    // If an item has no assigned participants and there are participants in the bill,
+    // assign it to everyone by default.
+    if (item.participantIds.length === 0 && participants.length > 0) {
+      participantIdsForItem = participants.map(p => p.id);
+    }
+
+    if (participantIdsForItem.length > 0) {
+      const splitPrice = item.price / participantIdsForItem.length;
+      participantIdsForItem.forEach(pId => {
         participantTotals.set(pId, (participantTotals.get(pId) || 0) + splitPrice);
       });
     }

@@ -24,8 +24,8 @@ const formatCurrency = (amount: number) => {
 export function BillItemsList({ items, participants, removeItem, toggleItemParticipant, assignItemToAll }: BillItemsListProps) {
   
   const getParticipantNames = (participantIds: string[]) => {
-    if (participantIds.length === participants.length) return 'Everyone';
-    if (participantIds.length === 0) return 'Nobody';
+    if (participantIds.length === participants.length || (participantIds.length === 0 && participants.length > 0)) return 'Everyone';
+    if (participantIds.length === 0) return 'Unassigned';
     if (participantIds.length > 2) return `${participantIds.length} people`;
     return participants
       .filter(p => participantIds.includes(p.id))
