@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: 'Split The Bill',
@@ -31,6 +32,7 @@ export default function RootLayout({
           {children}
           <Toaster />
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
