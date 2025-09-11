@@ -7,8 +7,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { ReceiptText, Trash2, Users } from 'lucide-react';
+import { ReceiptText, Trash2, Users, ChevronDown } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from '../ui/dropdown-menu';
 
 type BillItemsListProps = {
   items: BillItem[];
@@ -16,13 +17,14 @@ type BillItemsListProps = {
   removeItem: (id: string) => void;
   toggleItemParticipant: (itemId: string, participantId: string) => void;
   assignItemToAll: (itemId: string) => void;
+  updateItem: (id: string, updates: Partial<BillItem>) => void;
 };
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 };
 
-export function BillItemsList({ items, participants, removeItem, toggleItemParticipant, assignItemToAll }: BillItemsListProps) {
+export function BillItemsList({ items, participants, removeItem, toggleItemParticipant, assignItemToAll, updateItem }: BillItemsListProps) {
   
   const getParticipantNames = (participantIds: string[]) => {
     if (participantIds.length === participants.length || (participantIds.length === 0 && participants.length > 0)) return 'Everyone';
@@ -67,7 +69,29 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
                       <div className="flex flex-wrap items-center gap-x-2 text-xs sm:text-sm text-muted-foreground">
                         <span>Consumed by: {getParticipantNames(item.participantIds) || 'Unassigned'}</span>
                         <Separator orientation='vertical' className="h-4 hidden sm:inline-block" />
-                        <span>Paid by: <Badge variant="secondary">{getPayerName(item.paidById)}</Badge></span>
+                        <div className="flex items-center gap-1">
+                          <span>Paid by:</span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Badge variant="secondary" className="cursor-pointer hover:bg-primary/10">
+                                {getPayerName(item.paidById)}
+                                <ChevronDown className="ml-1 h-3 w-3" />
+                              </Badge>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuLabel>Change Payer</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuRadioGroup 
+                                value={item.paidById} 
+                                onValueChange={(newPaidById) => updateItem(item.id, { paidById: newPaidById })}
+                              >
+                                {participants.map(p => (
+                                  <DropdownMenuRadioItem key={p.id} value={p.id}>{p.name}</DropdownMenuRadioItem>
+                                ))}
+                              </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </div>
                     

@@ -23,6 +23,7 @@ export default function BillSplitterView({ billId }: BillSplitterViewProps) {
     removeItem,
     toggleItemParticipant,
     assignItemToAll,
+    updateItem,
     updateBill,
   } = useBillState(billId);
 
@@ -45,6 +46,7 @@ export default function BillSplitterView({ billId }: BillSplitterViewProps) {
               removeItem={removeItem} 
               toggleItemParticipant={toggleItemParticipant}
               assignItemToAll={assignItemToAll}
+              updateItem={updateItem}
             />
           </div>
           <div className="md:col-span-1">
@@ -52,6 +54,7 @@ export default function BillSplitterView({ billId }: BillSplitterViewProps) {
               participants={participants} 
               items={items} 
               addParticipant={addParticipant}
+              removeParticipant={removeParticipant}
             />
           </div>
         </div>

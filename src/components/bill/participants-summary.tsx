@@ -4,13 +4,16 @@ import { BillItem, Participant } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddParticipantForm } from './add-participant-form';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Trash2, User } from 'lucide-react';
 import { useMemo } from 'react';
+import { Button } from '../ui/button';
+import { ScrollArea } from '../ui/scroll-area';
 
 type ParticipantsSummaryProps = {
   participants: Participant[];
   items: BillItem[];
   addParticipant: (name: string) => void;
+  removeParticipant: (id: string) => void;
 };
 
 type Balance = {
@@ -19,7 +22,7 @@ type Balance = {
   net: number;
 }
 
-export function ParticipantsSummary({ participants, items, addParticipant }: ParticipantsSummaryProps) {
+export function ParticipantsSummary({ participants, items, addParticipant, removeParticipant }: ParticipantsSummaryProps) {
   
   const { grandTotal, settlements } = useMemo(() => {
     const balances = new Map<string, Balance>();
@@ -103,6 +106,24 @@ export function ParticipantsSummary({ participants, items, addParticipant }: Par
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <AddParticipantForm addParticipant={addParticipant} />
+        
+        {participants.length > 0 && <Separator />}
+
+        <ScrollArea className="h-48">
+          <div className="space-y-2 pr-3">
+            {participants.map(p => (
+              <div key={p.id} className="flex items-center justify-between p-2 rounded-md bg-secondary group">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{p.name}</span>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeParticipant(p.id)}>
+                  <Trash2 className="h-4 w-4"/>
+                </Button>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
         
         {settlements.length > 0 && (
           <>

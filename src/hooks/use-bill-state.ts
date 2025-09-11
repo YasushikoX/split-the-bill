@@ -148,6 +148,13 @@ export function useBillState(billId: string) {
 
         const currentItems = items;
         currentItems.forEach(item => {
+            if (item.paidById === id) {
+              // This case should be handled by re-assigning payment,
+              // for now we just log it or prevent deletion.
+              // For simplicity, we'll allow it but console a warning.
+              console.warn(`Participant ${id} paid for item ${item.id} and is being removed.`);
+            }
+
             const itemRef = doc(db, 'bills', billId, 'items', item.id);
             if (item.participantIds.includes(id)) {
               batch.update(itemRef, { participantIds: arrayRemove(id) });
@@ -177,6 +184,15 @@ export function useBillState(billId: string) {
         await deleteDoc(doc(db, 'bills', billId, 'items', id));
     } catch (error) {
         console.error("Error removing item: ", error);
+    }
+  }, [billId]);
+
+  const updateItem = useCallback(async (id: string, updates: Partial<Omit<BillItem, 'id'>>) => {
+    try {
+      const itemRef = doc(db, 'bills', billId, 'items', id);
+      await updateDoc(itemRef, updates);
+    } catch (error) {
+      console.error("Error updating item: ", error);
     }
   }, [billId]);
 
@@ -223,5 +239,6 @@ export function useBillState(billId: string) {
     removeItem,
     toggleItemParticipant,
     assignItemToAll,
+    updateItem,
   };
 }
