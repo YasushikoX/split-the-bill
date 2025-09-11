@@ -7,9 +7,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { ReceiptText, Trash2, Users, ChevronDown } from 'lucide-react';
-import { Badge } from '../ui/badge';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator } from '../ui/dropdown-menu';
+import { ReceiptText, Trash2, Users } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Label } from '../ui/label';
 
 type BillItemsListProps = {
   items: BillItem[];
@@ -66,33 +66,9 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
 
                     <div className="flex-grow overflow-hidden">
                       <p className="font-semibold truncate">{item.name}</p>
-                      <div className="flex flex-wrap items-center gap-x-2 text-xs sm:text-sm text-muted-foreground">
-                        <span>Consumed by: {getParticipantNames(item.participantIds) || 'Unassigned'}</span>
-                        <Separator orientation='vertical' className="h-4 hidden sm:inline-block" />
-                        <div className="flex items-center gap-1">
-                          <span>Paid by:</span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Badge variant="secondary" className="cursor-pointer hover:bg-primary/10">
-                                {getPayerName(item.paidById)}
-                                <ChevronDown className="ml-1 h-3 w-3" />
-                              </Badge>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuLabel>Change Payer</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuRadioGroup 
-                                value={item.paidById} 
-                                onValueChange={(newPaidById) => updateItem(item.id, { paidById: newPaidById })}
-                              >
-                                {participants.map(p => (
-                                  <DropdownMenuRadioItem key={p.id} value={p.id}>{p.name}</DropdownMenuRadioItem>
-                                ))}
-                              </DropdownMenuRadioGroup>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
+                        Paid by {getPayerName(item.paidById)} &middot; Split among {getParticipantNames(item.participantIds) || 'Unassigned'}
+                      </p>
                     </div>
                     
                     <div className="flex items-center gap-1 sm:gap-2">
@@ -106,30 +82,48 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
                         <PopoverContent className="w-64">
                           <div className="grid gap-4">
                             <div className="space-y-2">
-                              <h4 className="font-medium leading-none font-headline">Split Item</h4>
+                              <h4 className="font-medium leading-none font-headline">Assign Participants</h4>
                               <p className="text-sm text-muted-foreground">
-                                Assign this item to participants.
+                                Select who consumed and who paid for this item.
                               </p>
                             </div>
                             <Separator />
-                             <Button variant="ghost" size="sm" onClick={() => assignItemToAll(item.id)} className="justify-start -mx-2">
-                                 Assign to Everyone
-                             </Button>
-                             <Separator />
-                            <div className="grid gap-2">
-                              {participants.map(p => (
-                                <div key={p.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary transition-colors">
-                                  <Checkbox
-                                    id={`check-${item.id}-${p.id}`}
-                                    checked={item.participantIds.includes(p.id)}
-                                    onCheckedChange={() => toggleItemParticipant(item.id, p.id)}
-                                  />
-                                  <label htmlFor={`check-${item.id}-${p.id}`} className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    {p.name}
-                                  </label>
-                                </div>
-                              ))}
+                            <div>
+                                <h5 className="mb-2 text-sm font-medium">Paid By</h5>
+                                <RadioGroup
+                                    value={item.paidById}
+                                    onValueChange={(newPaidById) => updateItem(item.id, { paidById: newPaidById })}
+                                    className="gap-2"
+                                >
+                                    {participants.map(p => (
+                                        <div key={`paid-${p.id}`} className="flex items-center space-x-2">
+                                            <RadioGroupItem value={p.id} id={`paid-${item.id}-${p.id}`} />
+                                            <Label htmlFor={`paid-${item.id}-${p.id}`}>{p.name}</Label>
+                                        </div>
+                                    ))}
+                                </RadioGroup>
                             </div>
+                            <Separator />
+                             <div>
+                                <h5 className="mb-2 text-sm font-medium">Split With</h5>
+                                <div className="grid gap-2">
+                                  {participants.map(p => (
+                                    <div key={`check-${p.id}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary transition-colors -mx-2">
+                                      <Checkbox
+                                        id={`check-${item.id}-${p.id}`}
+                                        checked={item.participantIds.includes(p.id)}
+                                        onCheckedChange={() => toggleItemParticipant(item.id, p.id)}
+                                      />
+                                      <label htmlFor={`check-${item.id}-${p.id}`} className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {p.name}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                                <Button variant="ghost" size="sm" onClick={() => assignItemToAll(item.id)} className="justify-start -mx-2 mt-2 w-full">
+                                     Assign to Everyone
+                                </Button>
+                             </div>
                           </div>
                         </PopoverContent>
                       </Popover>
