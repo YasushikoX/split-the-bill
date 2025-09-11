@@ -19,7 +19,7 @@ export default function BillPage({ params }: BillPageProps) {
   return (
     <>
       <main className="container mx-auto max-w-7xl p-4 md:p-8">
-        <BillSplitterView billId={params.id} />
+        <BillSplitterView params={params} />
       </main>
       <footer className="mt-8 text-center text-sm text-muted-foreground pb-8">
         <p>&copy; {year} Stable Co. All rights reserved.</p>

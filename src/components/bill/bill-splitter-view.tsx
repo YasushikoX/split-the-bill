@@ -8,10 +8,13 @@ import { ParticipantsSummary } from './participants-summary';
 import { Skeleton } from '../ui/skeleton';
 
 type BillSplitterViewProps = {
-  billId: string;
+  params: {
+    id: string;
+  };
 };
 
-export default function BillSplitterView({ billId }: BillSplitterViewProps) {
+export default function BillSplitterView({ params }: BillSplitterViewProps) {
+  const billId = params.id;
   const {
     bill,
     items,
