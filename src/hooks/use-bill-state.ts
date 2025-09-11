@@ -7,35 +7,36 @@ import { db } from '@/lib/firebase';
 import {
   collection,
   doc,
-  getDocs,
+  onSnapshot,
   addDoc,
   deleteDoc,
   updateDoc,
   arrayUnion,
   arrayRemove,
   writeBatch,
-  query,
 } from 'firebase/firestore';
 
 export function useBillState(billId: string) {
   const [items, setItems] = useState<BillItem[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
 
-  const fetchData = useCallback(async () => {
+  useEffect(() => {
     if (!billId) return;
 
-    try {
-      const participantsQuery = query(collection(db, 'bills', billId, 'participants'));
-      const participantsSnapshot = await getDocs(participantsQuery);
-      const participantsData = participantsSnapshot.docs.map(doc => ({
+    const participantsQuery = collection(db, 'bills', billId, 'participants');
+    const participantsUnsubscribe = onSnapshot(participantsQuery, (snapshot) => {
+      const participantsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       } as Participant));
       setParticipants(participantsData);
+    }, (error) => {
+      console.error("Error fetching participants:", error);
+    });
 
-      const itemsQuery = query(collection(db, 'bills', billId, 'items'));
-      const itemsSnapshot = await getDocs(itemsQuery);
-      const itemsData = itemsSnapshot.docs.map(doc => {
+    const itemsQuery = collection(db, 'bills', billId, 'items');
+    const itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
+      const itemsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -46,111 +47,68 @@ export function useBillState(billId: string) {
         } as BillItem;
       });
       setItems(itemsData);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
+    }, (error) => {
+      console.error("Error fetching items:", error);
+    });
+
+    return () => {
+      participantsUnsubscribe();
+      itemsUnsubscribe();
+    };
   }, [billId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
+  
   const addParticipant = useCallback(async (name: string) => {
     if (name && !participants.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
-        const tempId = `temp-${Date.now()}`;
-        const newParticipant = { id: tempId, name };
-        setParticipants(prev => [...prev, newParticipant]);
-
         try {
-            const docRef = await addDoc(collection(db, 'bills', billId, 'participants'), { name });
-            setParticipants(prev => prev.map(p => p.id === tempId ? { ...p, id: docRef.id } : p));
+            await addDoc(collection(db, 'bills', billId, 'participants'), { name });
         } catch (error) {
             console.error("Error adding participant: ", error);
-            setParticipants(prev => prev.filter(p => p.id !== tempId));
         }
     }
   }, [billId, participants]);
   
   const removeParticipant = useCallback(async (id: string) => {
-    const originalParticipants = participants;
-    const originalItems = items;
-    
-    setParticipants(prev => prev.filter(p => p.id !== id));
-    setItems(prev => prev.map(item => ({
-      ...item,
-      participantIds: item.participantIds.filter(pId => pId !== id),
-    })));
-
     try {
         const batch = writeBatch(db);
         const participantDocRef = doc(db, 'bills', billId, 'participants', id);
         batch.delete(participantDocRef);
 
-        items.forEach(item => {
-            if (item.participantIds.includes(id)) {
-                const itemRef = doc(db, 'bills', billId, 'items', item.id);
-                batch.update(itemRef, { participantIds: arrayRemove(id) });
-            }
+        const currentItems = items.filter(item => item.participantIds.includes(id));
+        currentItems.forEach(item => {
+            const itemRef = doc(db, 'bills', billId, 'items', item.id);
+            batch.update(itemRef, { participantIds: arrayRemove(id) });
         });
         await batch.commit();
     } catch (error) {
         console.error("Error removing participant: ", error);
-        setParticipants(originalParticipants);
-        setItems(originalItems);
     }
-  }, [billId, items, participants]);
+  }, [billId, items]);
 
   const addItem = useCallback(async (name: string, price: number) => {
-    const tempId = `temp-${Date.now()}`;
-    const newItem: BillItem = {
-      id: tempId,
-      name,
-      price,
-      participantIds: [],
-      icon: getIconForItem(name)
-    };
-    setItems(prev => [...prev, newItem]);
-
     try {
-        const docRef = await addDoc(collection(db, 'bills', billId, 'items'), {
+        await addDoc(collection(db, 'bills', billId, 'items'), {
             name,
             price,
             participantIds: [],
         });
-        setItems(prev => prev.map(i => i.id === tempId ? { ...i, id: docRef.id } : i));
     } catch (error) {
         console.error("Error adding item: ", error);
-        setItems(prev => prev.filter(i => i.id !== tempId));
     }
   }, [billId]);
 
   const removeItem = useCallback(async (id: string) => {
-    const originalItems = items;
-    setItems(prev => prev.filter(item => item.id !== id));
     try {
         await deleteDoc(doc(db, 'bills', billId, 'items', id));
     } catch (error) {
         console.error("Error removing item: ", error);
-        setItems(originalItems);
     }
-  }, [billId, items]);
+  }, [billId]);
 
   const toggleItemParticipant = useCallback(async (itemId: string, participantId: string) => {
-    const originalItems = items;
-    setItems(prevItems => prevItems.map(item => {
-      if (item.id === itemId) {
-        const isParticipantAssigned = item.participantIds.includes(participantId);
-        const newParticipantIds = isParticipantAssigned
-          ? item.participantIds.filter(id => id !== participantId)
-          : [...item.participantIds, participantId];
-        return { ...item, participantIds: newParticipantIds };
-      }
-      return item;
-    }));
-
     try {
       const itemRef = doc(db, 'bills', billId, 'items', itemId);
-      const currentItem = originalItems.find(item => item.id === itemId);
+      const currentItem = items.find(item => item.id === itemId);
+      
       if (currentItem?.participantIds.includes(participantId)) {
           await updateDoc(itemRef, { participantIds: arrayRemove(participantId) });
       } else {
@@ -158,27 +116,16 @@ export function useBillState(billId: string) {
       }
     } catch (error) {
         console.error("Error toggling item participant: ", error);
-        setItems(originalItems);
     }
   }, [billId, items]);
   
   const assignItemToAll = useCallback(async (itemId: string) => {
-    const originalItems = items;
-    const allParticipantIds = participants.map(p => p.id);
-    
-    setItems(prevItems => prevItems.map(item => {
-      if (item.id === itemId) {
-        const areAllAssigned = allParticipantIds.length > 0 && item.participantIds.length === allParticipantIds.length;
-        return { ...item, participantIds: areAllAssigned ? [] : allParticipantIds };
-      }
-      return item;
-    }));
-
     try {
       const itemRef = doc(db, 'bills', billId, 'items', itemId);
-      const currentItem = originalItems.find(item => item.id === itemId);
+      const currentItem = items.find(item => item.id === itemId);
       if (!currentItem) return;
 
+      const allParticipantIds = participants.map(p => p.id);
       const areAllAssigned = allParticipantIds.length > 0 &&
         allParticipantIds.every(id => currentItem.participantIds.includes(id)) &&
         allParticipantIds.length === currentItem.participantIds.length;
@@ -186,7 +133,6 @@ export function useBillState(billId: string) {
       await updateDoc(itemRef, { participantIds: areAllAssigned ? [] : allParticipantIds });
     } catch (error) {
         console.error("Error assigning item to all: ", error);
-        setItems(originalItems);
     }
   }, [billId, participants, items]);
 
