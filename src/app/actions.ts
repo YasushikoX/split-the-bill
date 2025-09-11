@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 
 export async function createBillSession() {
-  const id = crypto.randomUUID();
+  const id = Math.random().toString(36).substring(2, 8);
   redirect(`/bill/${id}`);
 }
 
