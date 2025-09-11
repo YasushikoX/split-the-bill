@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BillItem, Participant } from '@/lib/types';
 import { getIconForItem } from '@/lib/icon-mapping';
 import { db } from '@/lib/firebase';
@@ -23,18 +23,22 @@ export function useBillState(billId: string) {
   const [participants, setParticipants] = useState<Participant[]>([]);
 
   useEffect(() => {
-    const participantsCollection = collection(db, 'bills', billId, 'participants');
-    const participantsUnsubscribe = onSnapshot(participantsCollection, (snapshot) => {
+    if (!billId) return;
+    const participantsQuery = query(collection(db, 'bills', billId, 'participants'));
+    const participantsUnsubscribe = onSnapshot(participantsQuery, (snapshot) => {
       const participantsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Participant));
       setParticipants(participantsData);
+    }, (error) => {
+      console.error("Error fetching participants: ", error);
     });
 
     return () => participantsUnsubscribe();
   }, [billId]);
 
   useEffect(() => {
-    const itemsCollection = collection(db, 'bills', billId, 'items');
-    const itemsUnsubscribe = onSnapshot(itemsCollection, (snapshot) => {
+    if (!billId) return;
+    const itemsQuery = query(collection(db, 'bills', billId, 'items'));
+    const itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
       const itemsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -46,12 +50,14 @@ export function useBillState(billId: string) {
         } as BillItem;
       });
       setItems(itemsData);
+    }, (error) => {
+      console.error("Error fetching items: ", error);
     });
 
     return () => itemsUnsubscribe();
   }, [billId]);
 
-  const addParticipant = async (name: string) => {
+  const addParticipant = useCallback(async (name: string) => {
     if (name && !participants.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
         try {
             await addDoc(collection(db, 'bills', billId, 'participants'), { name });
@@ -59,9 +65,9 @@ export function useBillState(billId: string) {
             console.error("Error adding participant: ", error);
         }
     }
-  };
+  }, [billId, participants]);
   
-  const removeParticipant = async (id: string) => {
+  const removeParticipant = useCallback(async (id: string) => {
     try {
         const batch = writeBatch(db);
         const participantDocRef = doc(db, 'bills', billId, 'participants', id);
@@ -70,10 +76,12 @@ export function useBillState(billId: string) {
         const itemsQuery = query(collection(db, 'bills', billId, 'items'));
         const itemsSnapshot = await getDocs(itemsQuery);
         itemsSnapshot.forEach(itemDoc => {
-            const itemRef = doc(db, 'bills', billId, 'items', itemDoc.id);
-            batch.update(itemRef, {
-                participantIds: arrayRemove(id)
-            });
+            if (itemDoc.data().participantIds?.includes(id)) {
+              const itemRef = doc(db, 'bills', billId, 'items', itemDoc.id);
+              batch.update(itemRef, {
+                  participantIds: arrayRemove(id)
+              });
+            }
         });
 
         await batch.commit();
@@ -81,9 +89,9 @@ export function useBillState(billId: string) {
     } catch (error) {
         console.error("Error removing participant: ", error);
     }
-  }
+  }, [billId]);
 
-  const addItem = async (name: string, price: number) => {
+  const addItem = useCallback(async (name: string, price: number) => {
     try {
         await addDoc(collection(db, 'bills', billId, 'items'), {
             name,
@@ -93,17 +101,17 @@ export function useBillState(billId: string) {
     } catch (error) {
         console.error("Error adding item: ", error);
     }
-  };
+  }, [billId]);
 
-  const removeItem = async (id: string) => {
+  const removeItem = useCallback(async (id: string) => {
     try {
         await deleteDoc(doc(db, 'bills', billId, 'items', id));
     } catch (error) {
         console.error("Error removing item: ", error);
     }
-  };
+  }, [billId]);
 
-  const toggleItemParticipant = async (itemId: string, participantId: string) => {
+  const toggleItemParticipant = useCallback(async (itemId: string, participantId: string) => {
     try {
         const itemRef = doc(db, 'bills', billId, 'items', itemId);
         const currentItem = items.find(item => item.id === itemId);
@@ -121,26 +129,29 @@ export function useBillState(billId: string) {
     } catch (error) {
         console.error("Error toggling item participant: ", error);
     }
-  };
+  }, [billId, items]);
   
-  const assignItemToAll = async (itemId: string) => {
+  const assignItemToAll = useCallback(async (itemId: string) => {
     try {
         const itemRef = doc(db, 'bills', billId, 'items', itemId);
         const allParticipantIds = participants.map(p => p.id);
         const currentItem = items.find(item => item.id === itemId);
 
         if (currentItem) {
-            const areAllAssigned = allParticipantIds.length > 0 && allParticipantIds.every(id => currentItem.participantIds.includes(id));
+            const areAllAssigned = allParticipantIds.length > 0 && allParticipantIds.length === currentItem.participantIds.length && allParticipantIds.every(id => currentItem.participantIds.includes(id));
+            
             if (areAllAssigned) {
+                // If everyone is assigned, unassign everyone
                 await updateDoc(itemRef, { participantIds: [] });
             } else {
+                // Otherwise, assign to everyone
                 await updateDoc(itemRef, { participantIds: allParticipantIds });
             }
         }
     } catch (error) {
         console.error("Error assigning item to all: ", error);
     }
-  }
+  }, [billId, participants, items]);
 
   return {
     items,
