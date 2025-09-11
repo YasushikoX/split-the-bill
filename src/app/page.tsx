@@ -1,10 +1,19 @@
+'use client';
+
 import { createBillSession } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FilePlus2 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
+  const [year, setYear] = useState(new Date().getFullYear());
+
+  useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
+
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-2xl">
@@ -28,7 +37,7 @@ export default function Home() {
         </CardContent>
       </Card>
       <footer className="mt-8 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Split The Bill. All rights reserved.</p>
+        <p>&copy; {year} Split The Bill. All rights reserved.</p>
       </footer>
     </div>
   );
