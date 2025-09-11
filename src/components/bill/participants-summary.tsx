@@ -118,7 +118,7 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
                   <span className="font-medium truncate flex-grow">{p.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm text-muted-foreground">{formatCurrency(balances.get(p.id)?.consumed ?? 0)}</span>
+                    <span className="font-mono text-sm text-muted-foreground">{formatCurrency(balances.get(p.id)?.paid ?? 0)}</span>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeParticipant(p.id)}>
                         <Trash2 className="h-4 w-4"/>
                     </Button>
