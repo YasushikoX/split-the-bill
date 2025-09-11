@@ -32,13 +32,13 @@ export default function Home() {
           </p>
           <div className="w-full flex flex-col sm:flex-row gap-2">
             <form action={createBillSession} className="flex-1">
-              <Button size="lg" className="w-full text-lg font-semibold h-14">
+              <Button size="lg" className="w-full text-lg font-semibold">
                 <FilePlus2 className="mr-2 h-5 w-5" />
                 New Bill
               </Button>
             </form>
             <div className="flex-1">
-              <Button size="lg" variant="outline" className="w-full text-lg font-semibold h-14" onClick={() => setIsHistoryOpen(true)}>
+              <Button size="lg" variant="outline" className="w-full text-lg font-semibold" onClick={() => setIsHistoryOpen(true)}>
                 <History className="mr-2 h-5 w-5" />
                 History
               </Button>
