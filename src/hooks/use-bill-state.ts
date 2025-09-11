@@ -21,20 +21,16 @@ import {
 export function useBillState(billId: string) {
   const [items, setItems] = useState<BillItem[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [isStateLoaded, setIsStateLoaded] = useState(false);
 
   useEffect(() => {
     const participantsCollection = collection(db, 'bills', billId, 'participants');
     const participantsUnsubscribe = onSnapshot(participantsCollection, (snapshot) => {
       const participantsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Participant));
       setParticipants(participantsData);
-      if (!isStateLoaded) {
-        setIsStateLoaded(true);
-      }
     });
 
     return () => participantsUnsubscribe();
-  }, [billId, isStateLoaded]);
+  }, [billId]);
 
   useEffect(() => {
     const itemsCollection = collection(db, 'bills', billId, 'items');
@@ -149,7 +145,6 @@ export function useBillState(billId: string) {
   return {
     items,
     participants,
-    isStateLoaded,
     addParticipant,
     removeParticipant,
     addItem,

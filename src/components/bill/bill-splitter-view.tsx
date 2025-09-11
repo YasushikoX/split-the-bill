@@ -15,7 +15,6 @@ export default function BillSplitterView({ billId }: BillSplitterViewProps) {
   const {
     items,
     participants,
-    isStateLoaded,
     addParticipant,
     removeParticipant,
     addItem,
@@ -23,10 +22,6 @@ export default function BillSplitterView({ billId }: BillSplitterViewProps) {
     toggleItemParticipant,
     assignItemToAll,
   } = useBillState(billId);
-
-  if (!isStateLoaded) {
-    return <LoadingSkeleton />;
-  }
 
   return (
     <div className="space-y-8">
