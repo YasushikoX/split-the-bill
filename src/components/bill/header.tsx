@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { Calendar as CalendarIcon, FilePlus2 } from 'lucide-react';
 import { ShareButton } from './share-button';
 import { createBillSession } from '@/app/actions';
+import { ThemeToggleButton } from './theme-toggle-button';
 
 type HeaderProps = {
   bill: Bill | null;
@@ -68,6 +69,7 @@ export function Header({ bill, updateBill }: HeaderProps) {
             </Button>
         </form>
         <ShareButton />
+        <ThemeToggleButton />
       </div>
     </header>
   );
