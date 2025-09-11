@@ -88,39 +88,39 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
                               </p>
                             </div>
                             <Separator />
-                            <div>
-                                <h5 className="mb-2 text-sm font-medium">Paid By</h5>
+                            <div className="grid gap-2">
+                                <h5 className="font-medium text-sm">Paid By</h5>
                                 <RadioGroup
                                     value={item.paidById}
                                     onValueChange={(newPaidById) => updateItem(item.id, { paidById: newPaidById })}
-                                    className="gap-2"
+                                    className="grid gap-1 -mx-2"
                                 >
                                     {participants.map(p => (
-                                        <div key={`paid-${p.id}`} className="flex items-center space-x-2">
+                                        <Label key={`paid-${p.id}`} htmlFor={`paid-${item.id}-${p.id}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary transition-colors cursor-pointer">
                                             <RadioGroupItem value={p.id} id={`paid-${item.id}-${p.id}`} />
-                                            <Label htmlFor={`paid-${item.id}-${p.id}`}>{p.name}</Label>
-                                        </div>
+                                            <span className="flex-1 text-sm font-medium leading-none">{p.name}</span>
+                                        </Label>
                                     ))}
                                 </RadioGroup>
                             </div>
                             <Separator />
-                             <div>
-                                <h5 className="mb-2 text-sm font-medium">Split With</h5>
-                                <div className="grid gap-2">
+                             <div className="grid gap-2">
+                                <h5 className="font-medium text-sm">Split With</h5>
+                                <div className="grid gap-1 -mx-2">
                                   {participants.map(p => (
-                                    <div key={`check-${p.id}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary transition-colors -mx-2">
+                                    <Label key={`check-${p.id}`} htmlFor={`check-${item.id}-${p.id}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary transition-colors cursor-pointer">
                                       <Checkbox
                                         id={`check-${item.id}-${p.id}`}
                                         checked={item.participantIds.includes(p.id)}
                                         onCheckedChange={() => toggleItemParticipant(item.id, p.id)}
                                       />
-                                      <label htmlFor={`check-${item.id}-${p.id}`} className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                      <span className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                         {p.name}
-                                      </label>
-                                    </div>
+                                      </span>
+                                    </Label>
                                   ))}
                                 </div>
-                                <Button variant="ghost" size="sm" onClick={() => assignItemToAll(item.id)} className="justify-start -mx-2 mt-2 w-full">
+                                <Button variant="ghost" size="sm" onClick={() => assignItemToAll(item.id)} className="justify-start -mx-2 mt-1 w-full">
                                      Assign to Everyone
                                 </Button>
                              </div>
