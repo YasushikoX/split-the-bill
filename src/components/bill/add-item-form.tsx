@@ -22,7 +22,7 @@ type AddItemFormProps = {
 export function AddItemForm({ addItem, disabled }: AddItemFormProps) {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
-    defaultValues: { name: '', price: '' as any },
+    defaultValues: { name: '', price: undefined },
   });
 
   function onSubmit(data: z.infer<typeof FormSchema>) {
@@ -61,7 +61,7 @@ export function AddItemForm({ addItem, disabled }: AddItemFormProps) {
                   <FormControl>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                      <Input type="number" step="0.01" placeholder="Price" className="pl-6" {...field} disabled={disabled} />
+                      <Input type="number" step="0.01" placeholder="Price" className="pl-6" {...field} value={field.value ?? ''} disabled={disabled} />
                     </div>
                   </FormControl>
                   <FormMessage />
