@@ -13,6 +13,7 @@ type BillSplitterViewProps = {
 
 export default function BillSplitterView({ billId }: BillSplitterViewProps) {
   const {
+    bill,
     items,
     participants,
     addParticipant,
@@ -21,11 +22,12 @@ export default function BillSplitterView({ billId }: BillSplitterViewProps) {
     removeItem,
     toggleItemParticipant,
     assignItemToAll,
+    updateBill,
   } = useBillState(billId);
 
   return (
     <div className="space-y-8">
-      <Header billId={billId} />
+      <Header bill={bill} updateBill={updateBill} />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-8">
           <AddItemForm addItem={addItem} participants={participants} disabled={participants.length === 0} />
@@ -41,8 +43,7 @@ export default function BillSplitterView({ billId }: BillSplitterViewProps) {
           <ParticipantsSummary 
             participants={participants} 
             items={items} 
-            addParticipant={addParticipant} 
-            removeParticipant={removeParticipant}
+            addParticipant={addParticipant}
           />
         </div>
       </div>

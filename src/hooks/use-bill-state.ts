@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { BillItem, Participant } from '@/lib/types';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Bill, BillItem, Participant } from '@/lib/types';
 import { getIconForItem } from '@/lib/icon-mapping';
 import { db } from '@/lib/firebase';
 import {
@@ -15,28 +15,47 @@ import {
   arrayRemove,
   writeBatch,
   query,
+  setDoc,
+  getDoc
 } from 'firebase/firestore';
+import { useDebouncedCallback } from 'use-debounce';
 
 export function useBillState(billId: string) {
+  const [bill, setBill] = useState<Bill | null>(null);
   const [items, setItems] = useState<BillItem[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  
+  const billDocRef = useMemo(() => doc(db, 'bills', billId), [billId]);
 
   useEffect(() => {
     if (!billId) return;
 
+    const unsubBill = onSnapshot(billDocRef, async (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        setBill({ id: docSnapshot.id, ...docSnapshot.data() } as Bill);
+      } else {
+        const newBill = {
+          id: billId,
+          title: 'Untitled Bill',
+          date: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        };
+        await setDoc(billDocRef, newBill);
+        setBill(newBill);
+      }
+    });
+
     const participantsQuery = query(collection(db, 'bills', billId, 'participants'));
-    const participantsUnsubscribe = onSnapshot(participantsQuery, (snapshot) => {
+    const unsubParticipants = onSnapshot(participantsQuery, (snapshot) => {
       const participantsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       } as Participant));
       setParticipants(participantsData);
-    }, (error) => {
-      console.error("Error fetching participants:", error);
     });
 
     const itemsQuery = query(collection(db, 'bills', billId, 'items'));
-    const itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
+    const unsubItems = onSnapshot(itemsQuery, (snapshot) => {
       const itemsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -49,16 +68,25 @@ export function useBillState(billId: string) {
         } as BillItem;
       });
       setItems(itemsData);
-    }, (error) => {
-      console.error("Error fetching items:", error);
     });
 
     return () => {
-      participantsUnsubscribe();
-      itemsUnsubscribe();
+      unsubBill();
+      unsubParticipants();
+      unsubItems();
     };
-  }, [billId]);
+  }, [billId, billDocRef]);
   
+  const debouncedUpdateBill = useDebouncedCallback(async (updates: Partial<Bill>) => {
+    await updateDoc(billDocRef, updates);
+  }, 500);
+
+  const updateBill = useCallback((updates: Partial<Bill>) => {
+      setBill(prevBill => prevBill ? { ...prevBill, ...updates } : null);
+      debouncedUpdateBill(updates);
+  }, [debouncedUpdateBill]);
+
+
   const addParticipant = useCallback(async (name: string) => {
     if (name && !participants.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
         try {
@@ -81,8 +109,6 @@ export function useBillState(billId: string) {
             if (item.participantIds.includes(id)) {
               batch.update(itemRef, { participantIds: arrayRemove(id) });
             }
-            // If the removed participant was the payer, we need to handle this.
-            // For now, we'll leave it, but a more robust solution might re-assign or flag it.
         });
         await batch.commit();
     } catch (error) {
@@ -144,8 +170,10 @@ export function useBillState(billId: string) {
   }, [billId, participants, items]);
 
   return {
+    bill,
     items,
     participants,
+    updateBill,
     addParticipant,
     removeParticipant,
     addItem,

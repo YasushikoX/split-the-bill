@@ -1,5 +1,12 @@
 import { type LucideIcon } from "lucide-react";
 
+export interface Bill {
+  id: string;
+  title: string;
+  date: string;
+  createdAt: string;
+}
+
 export interface BillItem {
   id: string;
   name: string;

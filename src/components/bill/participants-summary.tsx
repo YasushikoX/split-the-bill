@@ -4,15 +4,13 @@ import { BillItem, Participant } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddParticipantForm } from './add-participant-form';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '../ui/button';
-import { ArrowRight, Trash2, UserPlus, Users } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useMemo } from 'react';
 
 type ParticipantsSummaryProps = {
   participants: Participant[];
   items: BillItem[];
   addParticipant: (name: string) => void;
-  removeParticipant: (id: string) => void;
 };
 
 type Balance = {
@@ -21,7 +19,7 @@ type Balance = {
   net: number;
 }
 
-export function ParticipantsSummary({ participants, items, addParticipant, removeParticipant }: ParticipantsSummaryProps) {
+export function ParticipantsSummary({ participants, items, addParticipant }: ParticipantsSummaryProps) {
   
   const { grandTotal, settlements } = useMemo(() => {
     const balances = new Map<string, Balance>();
@@ -105,11 +103,6 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <AddParticipantForm addParticipant={addParticipant} />
-        {participants.length > 0 && (
-          <div className="text-sm text-muted-foreground">
-            {participants.length} participant{participants.length === 1 ? '' : 's'}: {participants.map(p => p.name).join(', ')}
-          </div>
-        )}
         
         {settlements.length > 0 && (
           <>
