@@ -67,25 +67,27 @@ export function HistoryDialog({ open, onOpenChange }: HistoryDialogProps) {
                     <p className="text-sm">Create a new bill to start your history.</p>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="py-2">
                     {history.map(entry => (
-                    <Link href={`/bill/${entry.id}`} key={entry.id} passHref>
-                        <div
-                            onClick={() => onOpenChange(false)}
-                            className="flex justify-between items-center p-3 rounded-lg border bg-card hover:bg-secondary transition-colors cursor-pointer"
-                        >
-                            <div className="flex-grow">
-                                <p className="font-semibold truncate">{entry.title}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    {formatDate(entry.date)} &middot;{' '}
-                                    <span className="italic">
-                                        {formatRelativeDate(entry.accessedAt)}
-                                    </span>
-                                </p>
+                    <div key={entry.id} className="py-2">
+                        <Link href={`/bill/${entry.id}`} passHref>
+                            <div
+                                onClick={() => onOpenChange(false)}
+                                className="flex justify-between items-center p-3 rounded-lg border bg-card hover:bg-secondary transition-colors cursor-pointer"
+                            >
+                                <div className="flex-grow">
+                                    <p className="font-semibold truncate">{entry.title}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {formatDate(entry.date)} &middot;{' '}
+                                        <span className="italic">
+                                            {formatRelativeDate(entry.accessedAt)}
+                                        </span>
+                                    </p>
+                                </div>
+                                <p className="text-xs text-muted-foreground font-mono ml-4">{entry.id}</p>
                             </div>
-                            <p className="text-xs text-muted-foreground font-mono ml-4">{entry.id}</p>
-                        </div>
-                    </Link>
+                        </Link>
+                    </div>
                     ))}
                 </div>
             )}
