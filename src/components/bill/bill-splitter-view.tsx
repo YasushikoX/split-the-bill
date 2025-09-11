@@ -28,7 +28,7 @@ export default function BillSplitterView({ billId }: BillSplitterViewProps) {
       <Header billId={billId} />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-8">
-          <AddItemForm addItem={addItem} disabled={participants.length === 0} />
+          <AddItemForm addItem={addItem} participants={participants} disabled={participants.length === 0} />
           <BillItemsList 
             items={items} 
             participants={participants} 

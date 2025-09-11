@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { ReceiptText, Trash2, Users } from 'lucide-react';
+import { Badge } from '../ui/badge';
 
 type BillItemsListProps = {
   items: BillItem[];
@@ -32,6 +33,10 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
       .map(p => p.name.split(' ')[0])
       .join(', ');
   };
+  
+  const getPayerName = (paidById: string) => {
+    return participants.find(p => p.id === paidById)?.name || 'N/A';
+  }
 
   return (
     <Card>
@@ -59,7 +64,11 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
 
                     <div className="flex-grow">
                       <p className="font-semibold">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">{getParticipantNames(item.participantIds) || 'Unassigned'}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>Consumed by: {getParticipantNames(item.participantIds) || 'Unassigned'}</span>
+                        <Separator orientation='vertical' className="h-4" />
+                        <span>Paid by: <Badge variant="secondary">{getPayerName(item.paidById)}</Badge></span>
+                      </div>
                     </div>
                     
                     <div className="flex items-center gap-2">

@@ -6,6 +6,7 @@ export interface BillItem {
   price: number;
   icon: LucideIcon | null;
   participantIds: string[];
+  paidById: string;
 }
 
 export interface Participant {

@@ -14,6 +14,7 @@ import {
   arrayUnion,
   arrayRemove,
   writeBatch,
+  query,
 } from 'firebase/firestore';
 
 export function useBillState(billId: string) {
@@ -23,7 +24,7 @@ export function useBillState(billId: string) {
   useEffect(() => {
     if (!billId) return;
 
-    const participantsQuery = collection(db, 'bills', billId, 'participants');
+    const participantsQuery = query(collection(db, 'bills', billId, 'participants'));
     const participantsUnsubscribe = onSnapshot(participantsQuery, (snapshot) => {
       const participantsData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -34,7 +35,7 @@ export function useBillState(billId: string) {
       console.error("Error fetching participants:", error);
     });
 
-    const itemsQuery = collection(db, 'bills', billId, 'items');
+    const itemsQuery = query(collection(db, 'bills', billId, 'items'));
     const itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
       const itemsData = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -42,6 +43,7 @@ export function useBillState(billId: string) {
           id: doc.id,
           name: data.name,
           price: data.price,
+          paidById: data.paidById,
           participantIds: data.participantIds || [],
           icon: getIconForItem(data.name),
         } as BillItem;
@@ -73,10 +75,14 @@ export function useBillState(billId: string) {
         const participantDocRef = doc(db, 'bills', billId, 'participants', id);
         batch.delete(participantDocRef);
 
-        const currentItems = items.filter(item => item.participantIds.includes(id));
+        const currentItems = items;
         currentItems.forEach(item => {
             const itemRef = doc(db, 'bills', billId, 'items', item.id);
-            batch.update(itemRef, { participantIds: arrayRemove(id) });
+            if (item.participantIds.includes(id)) {
+              batch.update(itemRef, { participantIds: arrayRemove(id) });
+            }
+            // If the removed participant was the payer, we need to handle this.
+            // For now, we'll leave it, but a more robust solution might re-assign or flag it.
         });
         await batch.commit();
     } catch (error) {
@@ -84,11 +90,12 @@ export function useBillState(billId: string) {
     }
   }, [billId, items]);
 
-  const addItem = useCallback(async (name: string, price: number) => {
+  const addItem = useCallback(async (name: string, price: number, paidById: string) => {
     try {
         await addDoc(collection(db, 'bills', billId, 'items'), {
             name,
             price,
+            paidById,
             participantIds: [],
         });
     } catch (error) {

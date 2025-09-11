@@ -7,7 +7,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
-import { Trash2 } from 'lucide-react';
+import { ArrowRight, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
 
 type ParticipantsSummaryProps = {
   participants: Participant[];
@@ -16,27 +17,84 @@ type ParticipantsSummaryProps = {
   removeParticipant: (id: string) => void;
 };
 
+type Balance = {
+  paid: number;
+  consumed: number;
+  net: number;
+}
+
 export function ParticipantsSummary({ participants, items, addParticipant, removeParticipant }: ParticipantsSummaryProps) {
-  const participantTotals = new Map<string, number>();
-  let grandTotal = 0;
+  
+  const { balances, grandTotal, settlements } = useMemo(() => {
+    const balances = new Map<string, Balance>();
+    let grandTotal = 0;
 
-  items.forEach(item => {
-    grandTotal += item.price;
-    let participantIdsForItem = item.participantIds;
+    participants.forEach(p => {
+      balances.set(p.id, { paid: 0, consumed: 0, net: 0 });
+    });
 
-    // If an item has no assigned participants and there are participants in the bill,
-    // assign it to everyone by default.
-    if (item.participantIds.length === 0 && participants.length > 0) {
-      participantIdsForItem = participants.map(p => p.id);
-    }
+    items.forEach(item => {
+      grandTotal += item.price;
+      
+      const payerBalance = balances.get(item.paidById);
+      if (payerBalance) {
+        payerBalance.paid += item.price;
+      }
 
-    if (participantIdsForItem.length > 0) {
-      const splitPrice = item.price / participantIdsForItem.length;
-      participantIdsForItem.forEach(pId => {
-        participantTotals.set(pId, (participantTotals.get(pId) || 0) + splitPrice);
+      let consumers = item.participantIds;
+      if (consumers.length === 0 && participants.length > 0) {
+        consumers = participants.map(p => p.id);
+      }
+
+      if (consumers.length > 0) {
+        const costPerPerson = item.price / consumers.length;
+        consumers.forEach(consumerId => {
+          const consumerBalance = balances.get(consumerId);
+          if (consumerBalance) {
+            consumerBalance.consumed += costPerPerson;
+          }
+        });
+      }
+    });
+
+    balances.forEach((balance) => {
+      balance.net = balance.paid - balance.consumed;
+    });
+
+    // Calculate settlements
+    const debtors = Array.from(balances.entries()).filter(([,b]) => b.net < 0).sort((a,b) => a[1].net - b[1].net);
+    const creditors = Array.from(balances.entries()).filter(([,b]) => b.net > 0).sort((a,b) => b[1].net - a[1].net);
+
+    const settlements: {from: string, to: string, amount: number}[] = [];
+
+    let debtorIndex = 0;
+    let creditorIndex = 0;
+
+    while(debtorIndex < debtors.length && creditorIndex < creditors.length) {
+      const [debtorId, debtorBalance] = debtors[debtorIndex];
+      const [creditorId, creditorBalance] = creditors[creditorIndex];
+
+      const debtorOwes = -debtorBalance.net;
+      const creditorIsOwed = creditorBalance.net;
+
+      const settlementAmount = Math.min(debtorOwes, creditorIsOwed);
+
+      settlements.push({
+        from: participants.find(p => p.id === debtorId)?.name ?? 'Unknown',
+        to: participants.find(p => p.id === creditorId)?.name ?? 'Unknown',
+        amount: settlementAmount,
       });
+
+      debtorBalance.net += settlementAmount;
+      creditorBalance.net -= settlementAmount;
+
+      if(Math.abs(debtorBalance.net) < 0.01) debtorIndex++;
+      if(Math.abs(creditorBalance.net) < 0.01) creditorIndex++;
     }
-  });
+
+    return { balances, grandTotal, settlements };
+  }, [items, participants]);
+
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
@@ -45,36 +103,62 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
   return (
     <Card className="h-fit">
       <CardHeader>
-        <CardTitle className="font-headline">Participants</CardTitle>
-        <CardDescription>Add participants and see their totals.</CardDescription>
+        <CardTitle className="font-headline">Summary</CardTitle>
+        <CardDescription>Add participants and see who owes who.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <AddParticipantForm addParticipant={addParticipant} />
         <Separator />
-        <ScrollArea className="h-64">
-          <div className="flex flex-col gap-4 pr-4">
+        <ScrollArea className="h-40">
+          <div className="flex flex-col gap-3 pr-4">
             {participants.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No participants added yet.</p>
             ) : (
-              participants.map(participant => (
-                <div key={participant.id} className="group flex items-center justify-between gap-4 transition-colors p-2 rounded-lg hover:bg-secondary">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback>{participant.name.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{participant.name}</span>
+              participants.map(participant => {
+                const balance = balances.get(participant.id) || { net: 0 };
+                return (
+                  <div key={participant.id} className="group flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarFallback>{participant.name.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{participant.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <span className={`font-semibold ${balance.net < 0 ? 'text-destructive' : 'text-green-400'}`}>
+                         {formatCurrency(balance.net)}
+                       </span>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeParticipant(participant.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-primary">{formatCurrency(participantTotals.get(participant.id) || 0)}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeParticipant(participant.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </ScrollArea>
+        {settlements.length > 0 && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <h3 className="font-headline text-sm font-medium">How to settle up:</h3>
+              <div className="flex flex-col gap-2 text-sm">
+                {settlements.map((s, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-md bg-secondary">
+                    <span className="font-medium">{s.from}</span>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <ArrowRight className="h-4 w-4"/>
+                       <span className="font-mono text-primary bg-background px-2 py-0.5 rounded-md">{formatCurrency(s.amount)}</span>
+                      <ArrowRight className="h-4 w-4"/>
+                    </div>
+                    <span className="font-medium">{s.to}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </CardContent>
       <CardFooter className="flex-col items-stretch gap-2 pt-4">
          <Separator />
