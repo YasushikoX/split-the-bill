@@ -37,10 +37,12 @@ export default function Home() {
                 New Bill
               </Button>
             </form>
-            <Button size="lg" variant="outline" className="text-lg flex-1 h-14" onClick={() => setIsHistoryOpen(true)}>
-              <History className="mr-2 h-5 w-5" />
-              History
-            </Button>
+            <div className="flex-1">
+              <Button size="lg" variant="outline" className="w-full text-lg font-semibold h-14" onClick={() => setIsHistoryOpen(true)}>
+                <History className="mr-2 h-5 w-5" />
+                History
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
