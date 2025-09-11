@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { BillHistoryEntry } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, isValid } from 'date-fns';
 import { History, Trash2 } from 'lucide-react';
 
 type HistoryDialogProps = {
@@ -37,6 +37,16 @@ export function HistoryDialog({ open, onOpenChange }: HistoryDialogProps) {
     setHistory([]);
     onOpenChange(false);
   };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return isValid(date) ? format(date, 'MMMM d, yyyy') : 'Invalid date';
+  };
+
+  const formatRelativeDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return isValid(date) ? formatDistanceToNow(date, { addSuffix: true }) : '';
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -67,9 +77,9 @@ export function HistoryDialog({ open, onOpenChange }: HistoryDialogProps) {
                             <div className="flex-grow">
                                 <p className="font-semibold truncate">{entry.title}</p>
                                 <p className="text-sm text-muted-foreground">
-                                    {format(new Date(entry.date), 'MMMM d, yyyy')} &middot;{' '}
+                                    {formatDate(entry.date)} &middot;{' '}
                                     <span className="italic">
-                                        {formatDistanceToNow(new Date(entry.accessedAt), { addSuffix: true })}
+                                        {formatRelativeDate(entry.accessedAt)}
                                     </span>
                                 </p>
                             </div>
