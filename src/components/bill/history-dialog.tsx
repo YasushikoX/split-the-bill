@@ -67,9 +67,9 @@ export function HistoryDialog({ open, onOpenChange }: HistoryDialogProps) {
                     <p className="text-sm">Create a new bill to start your history.</p>
                 </div>
             ) : (
-                <div className="py-2">
+                <div className="space-y-2 py-2">
                     {history.map(entry => (
-                    <div key={entry.id} className="py-2">
+                    <div key={entry.id}>
                         <Link href={`/bill/${entry.id}`} passHref>
                             <div
                                 onClick={() => onOpenChange(false)}
