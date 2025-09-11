@@ -71,7 +71,8 @@ export function useBillState(billId: string) {
         updateHistory(billData);
       } else {
         const now = new Date();
-        const expirationDate = addDays(now, 30);
+        const expirationDays = parseInt(process.env.NEXT_PUBLIC_BILL_EXPIRATION_DAYS || '30', 10);
+        const expirationDate = addDays(now, expirationDays);
         const newBill: Omit<Bill, 'id'> = {
           title: 'Untitled Bill',
           date: now.toISOString(),
