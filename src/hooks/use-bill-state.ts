@@ -15,7 +15,9 @@ import {
   arrayRemove,
   writeBatch,
   query,
-  getDocs
+  getDocs,
+  DocumentData,
+  QuerySnapshot,
 } from 'firebase/firestore';
 
 export function useBillState(billId: string) {
@@ -24,37 +26,50 @@ export function useBillState(billId: string) {
 
   useEffect(() => {
     if (!billId) return;
+
+    // Listener for participants
     const participantsQuery = query(collection(db, 'bills', billId, 'participants'));
-    const participantsUnsubscribe = onSnapshot(participantsQuery, (snapshot) => {
-      const participantsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Participant));
-      setParticipants(participantsData);
-    }, (error) => {
-      console.error("Error fetching participants: ", error);
-    });
-
-    return () => participantsUnsubscribe();
-  }, [billId]);
-
-  useEffect(() => {
-    if (!billId) return;
-    const itemsQuery = query(collection(db, 'bills', billId, 'items'));
-    const itemsUnsubscribe = onSnapshot(itemsQuery, (snapshot) => {
-      const itemsData = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
+    const participantsUnsubscribe = onSnapshot(
+      participantsQuery,
+      (snapshot: QuerySnapshot<DocumentData>) => {
+        const participantsData = snapshot.docs.map(doc => ({
           id: doc.id,
-          name: data.name,
-          price: data.price,
-          participantIds: data.participantIds || [],
-          icon: getIconForItem(data.name),
-        } as BillItem;
-      });
-      setItems(itemsData);
-    }, (error) => {
-      console.error("Error fetching items: ", error);
-    });
+          ...doc.data(),
+        } as Participant));
+        setParticipants(participantsData);
+      },
+      (error) => {
+        console.error("Error fetching participants: ", error);
+      }
+    );
 
-    return () => itemsUnsubscribe();
+    // Listener for items
+    const itemsQuery = query(collection(db, 'bills', billId, 'items'));
+    const itemsUnsubscribe = onSnapshot(
+      itemsQuery,
+      (snapshot: QuerySnapshot<DocumentData>) => {
+        const itemsData = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name,
+            price: data.price,
+            participantIds: data.participantIds || [],
+            icon: getIconForItem(data.name),
+          } as BillItem;
+        });
+        setItems(itemsData);
+      },
+      (error) => {
+        console.error("Error fetching items: ", error);
+      }
+    );
+
+    // Cleanup listeners on component unmount
+    return () => {
+      participantsUnsubscribe();
+      itemsUnsubscribe();
+    };
   }, [billId]);
 
   const addParticipant = useCallback(async (name: string) => {
@@ -112,41 +127,44 @@ export function useBillState(billId: string) {
   }, [billId]);
 
   const toggleItemParticipant = useCallback(async (itemId: string, participantId: string) => {
+    const itemRef = doc(db, 'bills', billId, 'items', itemId);
+    const currentItem = items.find(item => item.id === itemId);
+    
+    if (!currentItem) return;
+
     try {
-        const itemRef = doc(db, 'bills', billId, 'items', itemId);
-        const currentItem = items.find(item => item.id === itemId);
-        if (currentItem) {
-            if (currentItem.participantIds.includes(participantId)) {
-                await updateDoc(itemRef, {
-                    participantIds: arrayRemove(participantId)
-                });
-            } else {
-                await updateDoc(itemRef, {
-                    participantIds: arrayUnion(participantId)
-                });
-            }
-        }
+      if (currentItem.participantIds.includes(participantId)) {
+          await updateDoc(itemRef, {
+              participantIds: arrayRemove(participantId)
+          });
+      } else {
+          await updateDoc(itemRef, {
+              participantIds: arrayUnion(participantId)
+          });
+      }
     } catch (error) {
         console.error("Error toggling item participant: ", error);
     }
   }, [billId, items]);
   
   const assignItemToAll = useCallback(async (itemId: string) => {
-    try {
-        const itemRef = doc(db, 'bills', billId, 'items', itemId);
-        const allParticipantIds = participants.map(p => p.id);
-        const currentItem = items.find(item => item.id === itemId);
+    const itemRef = doc(db, 'bills', billId, 'items', itemId);
+    const allParticipantIds = participants.map(p => p.id);
+    const currentItem = items.find(item => item.id === itemId);
 
-        if (currentItem) {
-            const areAllAssigned = allParticipantIds.length > 0 && allParticipantIds.length === currentItem.participantIds.length && allParticipantIds.every(id => currentItem.participantIds.includes(id));
-            
-            if (areAllAssigned) {
-                // If everyone is assigned, unassign everyone
-                await updateDoc(itemRef, { participantIds: [] });
-            } else {
-                // Otherwise, assign to everyone
-                await updateDoc(itemRef, { participantIds: allParticipantIds });
-            }
+    if (!currentItem) return;
+    
+    try {
+        const areAllAssigned = allParticipantIds.length > 0 && 
+          allParticipantIds.length === currentItem.participantIds.length && 
+          allParticipantIds.every(id => currentItem.participantIds.includes(id));
+        
+        if (areAllAssigned) {
+            // If everyone is assigned, unassign everyone
+            await updateDoc(itemRef, { participantIds: [] });
+        } else {
+            // Otherwise, assign to everyone
+            await updateDoc(itemRef, { participantIds: allParticipantIds });
         }
     } catch (error) {
         console.error("Error assigning item to all: ", error);
