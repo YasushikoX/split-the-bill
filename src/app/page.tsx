@@ -31,7 +31,7 @@ export default function Home() {
             Create a session, add your items, and share the link. It's that easy.
           </p>
           <div className="w-full flex flex-col sm:flex-row gap-2">
-            <form action={createBillSession} className="w-full flex-1">
+            <form action={createBillSession} className="flex-1">
               <Button size="lg" className="w-full text-lg font-semibold h-full" variant="default">
                 <FilePlus2 className="mr-2 h-5 w-5" />
                 New Bill
