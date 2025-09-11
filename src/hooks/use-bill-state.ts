@@ -59,7 +59,8 @@ export function useBillState(billId: string) {
     if (name && !participants.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
         try {
             const docRef = await addDoc(collection(db, 'bills', billId, 'participants'), { name });
-            setParticipants(prev => [...prev, { id: docRef.id, name }]);
+            const newParticipant = { id: docRef.id, name };
+            setParticipants(prev => [...prev, newParticipant]);
         } catch (error) {
             console.error("Error adding participant: ", error);
         }
