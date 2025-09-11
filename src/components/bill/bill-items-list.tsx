@@ -45,9 +45,9 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
         <CardDescription>Manage items and assign them to participants.</CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="min-h-48 max-h-[450px] -mx-4 sm:mx-0 sm:pr-3">
+        <ScrollArea className="h-[450px] -mx-4 sm:mx-0 sm:pr-3">
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground p-8">
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                 <ReceiptText className="w-16 h-16 mb-4" />
                 <p className="font-semibold">No items added yet</p>
                 <p className="text-sm">Use the form above to add items to the bill.</p>

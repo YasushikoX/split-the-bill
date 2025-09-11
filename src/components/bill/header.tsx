@@ -38,7 +38,7 @@ export function Header({ bill, updateBill }: HeaderProps) {
                 value={bill.title}
                 onChange={(e) => updateBill({ title: e.target.value })}
                 placeholder="Untitled Bill"
-                className="text-2xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="text-2xl md:text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Popover>
