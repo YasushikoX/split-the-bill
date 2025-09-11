@@ -26,10 +26,10 @@ export function Header({ bill, updateBill }: HeaderProps) {
   }
 
   return (
-    <header className="flex flex-col md:flex-row items-start md:items-center justify-between pb-4 border-b gap-4">
-      <div className="flex-grow flex items-center gap-3">
+    <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b gap-4">
+      <div className="flex-grow flex items-center gap-2 w-full">
         <Link href="/" aria-label="Go back to homepage">
-            <Button variant="outline" size="icon" className="h-10 w-10">
+            <Button variant="outline" size="icon" className="h-10 w-10 flex-shrink-0">
                 <ArrowLeft className="h-5 w-5" />
             </Button>
         </Link>
@@ -38,16 +38,16 @@ export function Header({ bill, updateBill }: HeaderProps) {
                 value={bill.title}
                 onChange={(e) => updateBill({ title: e.target.value })}
                 placeholder="Untitled Bill"
-                className="text-2xl md:text-3xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="text-2xl font-bold font-headline h-auto p-0 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
             />
-            <div className="flex items-center gap-4 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Popover>
                 <PopoverTrigger asChild>
                     <Button
                     variant={'outline'}
                     size="sm"
                     className={cn(
-                        'w-[200px] justify-start text-left font-normal',
+                        'w-full sm:w-[200px] justify-start text-left font-normal',
                         !bill.date && 'text-muted-foreground'
                     )}
                     >
@@ -64,11 +64,11 @@ export function Header({ bill, updateBill }: HeaderProps) {
                     />
                 </PopoverContent>
                 </Popover>
-                <p className="text-xs text-muted-foreground font-mono">ID: {bill.id}</p>
+                <p className="text-xs text-muted-foreground font-mono bg-secondary px-2 py-1 rounded-md">ID: {bill.id}</p>
             </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 self-end sm:self-center">
         <ShareButton />
         <ThemeToggleButton />
       </div>

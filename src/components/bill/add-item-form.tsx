@@ -44,59 +44,61 @@ export function AddItemForm({ addItem, participants, disabled }: AddItemFormProp
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Item Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Pizza, Drinks" {...field} disabled={disabled} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Price</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                      <Input type="number" step="0.01" placeholder="0.00" className="pl-6" {...field} value={field.value ?? ''} disabled={disabled} />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="paidById"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paid By</FormLabel>
-                   <Select onValueChange={field.onChange} value={field.value} disabled={disabled}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Item Name</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Payer" />
-                      </SelectTrigger>
+                      <Input placeholder="e.g., Pizza, Drinks" {...field} disabled={disabled} />
                     </FormControl>
-                    <SelectContent>
-                      {participants.map(p => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full md:col-span-4" disabled={disabled}>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                        <Input type="number" step="0.01" placeholder="0.00" className="pl-6" {...field} value={field.value ?? ''} disabled={disabled} />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="paidById"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Paid By</FormLabel>
+                     <Select onValueChange={field.onChange} value={field.value} disabled={disabled}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Payer" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {participants.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={disabled}>
               <PlusCircle className="mr-2 h-4 w-4" /> Add Item
             </Button>
           </form>

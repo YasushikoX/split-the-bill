@@ -45,7 +45,7 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
         <CardDescription>Manage items and assign them to participants.</CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="min-h-48 max-h-[450px] pr-3">
+        <ScrollArea className="min-h-48 max-h-[450px] -mx-4 sm:mx-0 sm:pr-3">
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground p-8">
                 <ReceiptText className="w-16 h-16 mb-4" />
@@ -53,29 +53,29 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
                 <p className="text-sm">Use the form above to add items to the bill.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 px-4 sm:px-0">
               {items.map(item => {
                 const Icon = item.icon || ReceiptText;
                 return (
-                  <div key={item.id} className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-secondary transition-all animate-in fade-in-0 zoom-in-95">
-                    <div className="flex-shrink-0 h-12 w-12 rounded-lg bg-secondary flex items-center justify-center">
-                        <Icon className="h-6 w-6 text-primary" />
+                  <div key={item.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-secondary transition-all animate-in fade-in-0 zoom-in-95">
+                    <div className="flex-shrink-0 h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-secondary flex items-center justify-center">
+                        <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                     </div>
 
-                    <div className="flex-grow">
-                      <p className="font-semibold">{item.name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex-grow overflow-hidden">
+                      <p className="font-semibold truncate">{item.name}</p>
+                      <div className="flex flex-wrap items-center gap-x-2 text-xs sm:text-sm text-muted-foreground">
                         <span>Consumed by: {getParticipantNames(item.participantIds) || 'Unassigned'}</span>
-                        <Separator orientation='vertical' className="h-4" />
+                        <Separator orientation='vertical' className="h-4 hidden sm:inline-block" />
                         <span>Paid by: <Badge variant="secondary">{getPayerName(item.paidById)}</Badge></span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg text-accent-foreground w-24 text-right">{formatCurrency(item.price)}</span>
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <span className="font-bold text-base sm:text-lg text-accent-foreground w-20 sm:w-24 text-right">{formatCurrency(item.price)}</span>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-9 w-9">
+                          <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0">
                             <Users className="h-4 w-4" />
                           </Button>
                         </PopoverTrigger>
@@ -109,7 +109,7 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
                           </div>
                         </PopoverContent>
                       </Popover>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive h-9 w-9" onClick={() => removeItem(item.id)}>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0" onClick={() => removeItem(item.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
