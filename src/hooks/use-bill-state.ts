@@ -57,124 +57,136 @@ export function useBillState(billId: string) {
 
   const addParticipant = useCallback(async (name: string) => {
     if (name && !participants.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
+        const tempId = `temp-${Date.now()}`;
+        const newParticipant = { id: tempId, name };
+        setParticipants(prev => [...prev, newParticipant]);
+
         try {
             const docRef = await addDoc(collection(db, 'bills', billId, 'participants'), { name });
-            const newParticipant = { id: docRef.id, name };
-            setParticipants(prev => [...prev, newParticipant]);
+            setParticipants(prev => prev.map(p => p.id === tempId ? { ...p, id: docRef.id } : p));
         } catch (error) {
             console.error("Error adding participant: ", error);
+            setParticipants(prev => prev.filter(p => p.id !== tempId));
         }
     }
   }, [billId, participants]);
   
   const removeParticipant = useCallback(async (id: string) => {
+    const originalParticipants = participants;
+    const originalItems = items;
+    
+    setParticipants(prev => prev.filter(p => p.id !== id));
+    setItems(prev => prev.map(item => ({
+      ...item,
+      participantIds: item.participantIds.filter(pId => pId !== id),
+    })));
+
     try {
         const batch = writeBatch(db);
         const participantDocRef = doc(db, 'bills', billId, 'participants', id);
         batch.delete(participantDocRef);
 
-        const updatedItems = items.map(item => {
+        items.forEach(item => {
             if (item.participantIds.includes(id)) {
                 const itemRef = doc(db, 'bills', billId, 'items', item.id);
-                const newParticipantIds = item.participantIds.filter(pId => pId !== id);
-                batch.update(itemRef, { participantIds: newParticipantIds });
-                return { ...item, participantIds: newParticipantIds };
+                batch.update(itemRef, { participantIds: arrayRemove(id) });
             }
-            return item;
         });
-
         await batch.commit();
-        setItems(updatedItems);
-        setParticipants(prev => prev.filter(p => p.id !== id));
     } catch (error) {
         console.error("Error removing participant: ", error);
+        setParticipants(originalParticipants);
+        setItems(originalItems);
     }
-  }, [billId, items]);
+  }, [billId, items, participants]);
 
   const addItem = useCallback(async (name: string, price: number) => {
+    const tempId = `temp-${Date.now()}`;
+    const newItem: BillItem = {
+      id: tempId,
+      name,
+      price,
+      participantIds: [],
+      icon: getIconForItem(name)
+    };
+    setItems(prev => [...prev, newItem]);
+
     try {
         const docRef = await addDoc(collection(db, 'bills', billId, 'items'), {
             name,
             price,
             participantIds: [],
         });
-        const newItem: BillItem = {
-          id: docRef.id,
-          name,
-          price,
-          participantIds: [],
-          icon: getIconForItem(name)
-        };
-        setItems(prev => [...prev, newItem]);
+        setItems(prev => prev.map(i => i.id === tempId ? { ...i, id: docRef.id } : i));
     } catch (error) {
         console.error("Error adding item: ", error);
+        setItems(prev => prev.filter(i => i.id !== tempId));
     }
   }, [billId]);
 
   const removeItem = useCallback(async (id: string) => {
+    const originalItems = items;
+    setItems(prev => prev.filter(item => item.id !== id));
     try {
         await deleteDoc(doc(db, 'bills', billId, 'items', id));
-        setItems(prev => prev.filter(item => item.id !== id));
     } catch (error) {
         console.error("Error removing item: ", error);
+        setItems(originalItems);
     }
-  }, [billId]);
+  }, [billId, items]);
 
   const toggleItemParticipant = useCallback(async (itemId: string, participantId: string) => {
-    const itemRef = doc(db, 'bills', billId, 'items', itemId);
-    const currentItem = items.find(item => item.id === itemId);
-    
-    if (!currentItem) return;
+    const originalItems = items;
+    setItems(prevItems => prevItems.map(item => {
+      if (item.id === itemId) {
+        const isParticipantAssigned = item.participantIds.includes(participantId);
+        const newParticipantIds = isParticipantAssigned
+          ? item.participantIds.filter(id => id !== participantId)
+          : [...item.participantIds, participantId];
+        return { ...item, participantIds: newParticipantIds };
+      }
+      return item;
+    }));
 
     try {
-      if (currentItem.participantIds.includes(participantId)) {
+      const itemRef = doc(db, 'bills', billId, 'items', itemId);
+      const currentItem = originalItems.find(item => item.id === itemId);
+      if (currentItem?.participantIds.includes(participantId)) {
           await updateDoc(itemRef, { participantIds: arrayRemove(participantId) });
-          setItems(prevItems => prevItems.map(item => 
-              item.id === itemId 
-              ? { ...item, participantIds: item.participantIds.filter(id => id !== participantId) } 
-              : item
-          ));
       } else {
           await updateDoc(itemRef, { participantIds: arrayUnion(participantId) });
-          setItems(prevItems => prevItems.map(item => 
-              item.id === itemId 
-              ? { ...item, participantIds: [...item.participantIds, participantId] } 
-              : item
-          ));
       }
     } catch (error) {
         console.error("Error toggling item participant: ", error);
+        setItems(originalItems);
     }
   }, [billId, items]);
   
   const assignItemToAll = useCallback(async (itemId: string) => {
-    const itemRef = doc(db, 'bills', billId, 'items', itemId);
+    const originalItems = items;
     const allParticipantIds = participants.map(p => p.id);
-    const currentItem = items.find(item => item.id === itemId);
-
-    if (!currentItem) return;
     
+    setItems(prevItems => prevItems.map(item => {
+      if (item.id === itemId) {
+        const areAllAssigned = allParticipantIds.length > 0 && item.participantIds.length === allParticipantIds.length;
+        return { ...item, participantIds: areAllAssigned ? [] : allParticipantIds };
+      }
+      return item;
+    }));
+
     try {
-        const areAllAssigned = allParticipantIds.length > 0 && 
-          allParticipantIds.length === currentItem.participantIds.length && 
-          allParticipantIds.every(id => currentItem.participantIds.includes(id));
-        
-        let newParticipantIds: string[];
-        if (areAllAssigned) {
-            // If everyone is assigned, unassign everyone
-            newParticipantIds = [];
-        } else {
-            // Otherwise, assign to everyone
-            newParticipantIds = allParticipantIds;
-        }
-        await updateDoc(itemRef, { participantIds: newParticipantIds });
-        setItems(prevItems => prevItems.map(item => 
-            item.id === itemId 
-            ? { ...item, participantIds: newParticipantIds } 
-            : item
-        ));
+      const itemRef = doc(db, 'bills', billId, 'items', itemId);
+      const currentItem = originalItems.find(item => item.id === itemId);
+      if (!currentItem) return;
+
+      const areAllAssigned = allParticipantIds.length > 0 &&
+        allParticipantIds.every(id => currentItem.participantIds.includes(id)) &&
+        allParticipantIds.length === currentItem.participantIds.length;
+      
+      await updateDoc(itemRef, { participantIds: areAllAssigned ? [] : allParticipantIds });
     } catch (error) {
         console.error("Error assigning item to all: ", error);
+        setItems(originalItems);
     }
   }, [billId, participants, items]);
 
