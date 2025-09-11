@@ -15,8 +15,6 @@ import {
   arrayRemove,
   writeBatch,
   query,
-  DocumentData,
-  QuerySnapshot,
 } from 'firebase/firestore';
 
 export function useBillState(billId: string) {
