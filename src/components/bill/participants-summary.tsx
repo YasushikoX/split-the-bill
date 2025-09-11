@@ -3,13 +3,10 @@
 import { BillItem, Participant } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { AddParticipantForm } from './add-participant-form';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
-import { ArrowRight, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { ArrowRight, Trash2, UserPlus, Users } from 'lucide-react';
+import { useMemo } from 'react';
 
 type ParticipantsSummaryProps = {
   participants: Participant[];
@@ -25,9 +22,8 @@ type Balance = {
 }
 
 export function ParticipantsSummary({ participants, items, addParticipant, removeParticipant }: ParticipantsSummaryProps) {
-  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
   
-  const { balances, grandTotal, settlements } = useMemo(() => {
+  const { grandTotal, settlements } = useMemo(() => {
     const balances = new Map<string, Balance>();
     let grandTotal = 0;
 
@@ -63,7 +59,6 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
       balance.net = balance.paid - balance.consumed;
     });
 
-    // Calculate settlements
     const debtors = Array.from(balances.entries()).filter(([,b]) => b.net < 0).sort((a,b) => a[1].net - b[1].net);
     const creditors = Array.from(balances.entries()).filter(([,b]) => b.net > 0).sort((a,b) => b[1].net - a[1].net);
 
@@ -95,15 +90,8 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
       if(Math.abs(creditorBalance.net) < 0.01) creditorIndex++;
     }
 
-    return { balances, grandTotal, settlements };
+    return { grandTotal, settlements };
   }, [items, participants]);
-
-  const filteredSettlements = useMemo(() => {
-    if (!selectedParticipantId) {
-      return settlements;
-    }
-    return settlements.filter(s => s.fromId === selectedParticipantId);
-  }, [settlements, selectedParticipantId]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
@@ -113,72 +101,33 @@ export function ParticipantsSummary({ participants, items, addParticipant, remov
     <Card className="h-fit">
       <CardHeader>
         <CardTitle className="font-headline">Summary</CardTitle>
-        <CardDescription>Add participants and see who owes who.</CardDescription>
+        <CardDescription>Add participants and see how to settle up.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <AddParticipantForm addParticipant={addParticipant} />
-        <Separator />
-        <ScrollArea className="h-40">
-          <div className="flex flex-col gap-3 pr-4">
-            {participants.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No participants added yet.</p>
-            ) : (
-              participants.map(participant => {
-                const balance = balances.get(participant.id) || { net: 0 };
-                return (
-                  <div key={participant.id} className="group flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback>{participant.name.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{participant.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                       <span className={`font-semibold ${balance.net < 0 ? 'text-destructive' : 'text-green-400'}`}>
-                         {formatCurrency(balance.net)}
-                       </span>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeParticipant(participant.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })
-            )}
+        {participants.length > 0 && (
+          <div className="text-sm text-muted-foreground">
+            {participants.length} participant{participants.length === 1 ? '' : 's'}: {participants.map(p => p.name).join(', ')}
           </div>
-        </ScrollArea>
+        )}
+        
         {settlements.length > 0 && (
           <>
             <Separator />
             <div className="space-y-3">
-              <h3 className="font-headline text-sm font-medium">How to settle up:</h3>
-              <Select onValueChange={(value) => setSelectedParticipantId(value === 'all' ? null : value)}>
-                 <SelectTrigger>
-                   <SelectValue placeholder="View personal summary..." />
-                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="all">Show All Settlements</SelectItem>
-                   {participants.map(p => (
-                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                   ))}
-                 </SelectContent>
-              </Select>
+              <h3 className="font-headline text-sm font-medium">How to Settle Up:</h3>
               <div className="flex flex-col gap-2 text-sm">
-                {filteredSettlements.length === 0 && selectedParticipantId ? (
-                   <p className="text-center text-muted-foreground py-4">This person has settled all their debts!</p>
-                ) : (
-                  filteredSettlements.map((s, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded-md bg-secondary">
-                      <span className="font-medium">{s.from}</span>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <ArrowRight className="h-4 w-4"/>
-                         <span className="font-mono text-primary bg-background px-2 py-0.5 rounded-md">{formatCurrency(s.amount)}</span>
-                        <ArrowRight className="h-4 w-4"/>
-                      </div>
-                      <span className="font-medium">{s.to}</span>
+                {settlements.map((s, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-md bg-secondary">
+                    <span className="font-medium">{s.from}</span>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <ArrowRight className="h-4 w-4"/>
+                       <span className="font-mono text-primary bg-background px-2 py-0.5 rounded-md">{formatCurrency(s.amount)}</span>
+                      <ArrowRight className="h-4 w-4"/>
                     </div>
-                  ))
-                )}
+                    <span className="font-medium">{s.to}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </>
