@@ -5,6 +5,7 @@ export interface Bill {
   title: string;
   date: string;
   createdAt: string;
+  expireAt: string;
 }
 
 export interface BillItem {

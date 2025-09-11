@@ -19,6 +19,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { useDebouncedCallback } from 'use-debounce';
+import { addDays } from 'date-fns';
 
 const MAX_HISTORY_LENGTH = 20;
 
@@ -69,15 +70,15 @@ export function useBillState(billId: string) {
         setBill(billData);
         updateHistory(billData);
       } else {
-        const newBill: Bill = {
-          id: billId,
+        const now = new Date();
+        const expirationDate = addDays(now, 30);
+        const newBill: Omit<Bill, 'id'> = {
           title: 'Untitled Bill',
-          date: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
+          date: now.toISOString(),
+          createdAt: now.toISOString(),
+          expireAt: expirationDate.toISOString(),
         };
         await setDoc(billDocRef, newBill);
-        setBill(newBill);
-        updateHistory(newBill);
       }
     });
 
