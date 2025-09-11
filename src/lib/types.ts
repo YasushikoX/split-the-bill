@@ -1,10 +1,11 @@
+import { type LucideIcon } from "lucide-react";
+
 export interface BillItem {
   id: string;
   name: string;
   price: number;
-  iconDataUri: string | null;
+  icon: LucideIcon | null;
   participantIds: string[];
-  isIconLoading: boolean;
 }
 
 export interface Participant {

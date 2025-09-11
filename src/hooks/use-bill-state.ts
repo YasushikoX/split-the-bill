@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { BillItem, Participant } from '@/lib/types';
-import { assignItemIcons } from '@/ai/flows/assign-item-icons';
+import { getIconForItem } from '@/lib/icon-mapping';
 
 export function useBillState(billId: string) {
   const [items, setItems] = useState<BillItem[]>([]);
@@ -16,9 +16,9 @@ export function useBillState(billId: string) {
       if (savedState) {
         const parsedState = JSON.parse(savedState);
         setItems(
-          parsedState.items.map((item: BillItem) => ({
+          parsedState.items.map((item: Omit<BillItem, 'icon'> & {iconName: string}) => ({
             ...item,
-            isIconLoading: false,
+            icon: getIconForItem(item.name),
           })) || []
         );
         setParticipants(parsedState.participants || []);
@@ -31,7 +31,7 @@ export function useBillState(billId: string) {
 
   useEffect(() => {
     if (isStateLoaded) {
-      const stateToSave = JSON.stringify({ items, participants });
+      const stateToSave = JSON.stringify({ items: items.map(item => ({...item, icon: null})), participants });
       localStorage.setItem(storageKey, stateToSave);
     }
   }, [items, participants, isStateLoaded, storageKey]);
@@ -51,34 +51,15 @@ export function useBillState(billId: string) {
     })));
   }
 
-  const addItem = async (name: string, price: number) => {
+  const addItem = (name: string, price: number) => {
     const newItem: BillItem = {
       id: crypto.randomUUID(),
       name,
       price,
-      iconDataUri: null,
+      icon: getIconForItem(name),
       participantIds: [],
-      isIconLoading: true,
     };
     setItems((prev) => [newItem, ...prev]);
-
-    try {
-      const result = await assignItemIcons({ itemName: name });
-      setItems((prev) =>
-        prev.map((item) =>
-          item.id === newItem.id
-            ? { ...item, iconDataUri: result.iconDataUri, isIconLoading: false }
-            : item
-        )
-      );
-    } catch (error) {
-      console.error('Failed to get icon:', error);
-      setItems((prev) =>
-        prev.map((item) =>
-          item.id === newItem.id ? { ...item, isIconLoading: false } : item
-        )
-      );
-    }
   };
 
   const removeItem = (id: string) => {

@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, ReceiptText, Trash2, Users } from 'lucide-react';
+import { ReceiptText, Trash2, Users } from 'lucide-react';
 
 type BillItemsListProps = {
   items: BillItem[];
@@ -49,67 +49,64 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
             </div>
           ) : (
             <div className="space-y-3">
-              {items.map(item => (
-                <div key={item.id} className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-secondary transition-all animate-in fade-in-0 zoom-in-95">
-                  <div className="flex-shrink-0 h-12 w-12 rounded-lg bg-secondary flex items-center justify-center">
-                    {item.isIconLoading ? (
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    ) : item.iconDataUri ? (
-                      <img src={item.iconDataUri} alt={`${item.name} icon`} className="h-8 w-8 object-contain" />
-                    ) : (
-                      <ReceiptText className="h-6 w-6 text-primary" />
-                    )}
-                  </div>
+              {items.map(item => {
+                const Icon = item.icon || ReceiptText;
+                return (
+                  <div key={item.id} className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-secondary transition-all animate-in fade-in-0 zoom-in-95">
+                    <div className="flex-shrink-0 h-12 w-12 rounded-lg bg-secondary flex items-center justify-center">
+                        <Icon className="h-6 w-6 text-primary" />
+                    </div>
 
-                  <div className="flex-grow">
-                    <p className="font-semibold">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">{getParticipantNames(item.participantIds) || 'Unassigned'}</p>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg text-accent w-24 text-right">{formatCurrency(item.price)}</span>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon" className="h-9 w-9">
-                          <Users className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-64">
-                        <div className="grid gap-4">
-                          <div className="space-y-2">
-                            <h4 className="font-medium leading-none font-headline">Split Item</h4>
-                            <p className="text-sm text-muted-foreground">
-                              Assign this item to participants.
-                            </p>
+                    <div className="flex-grow">
+                      <p className="font-semibold">{item.name}</p>
+                      <p className="text-sm text-muted-foreground">{getParticipantNames(item.participantIds) || 'Unassigned'}</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-lg text-accent w-24 text-right">{formatCurrency(item.price)}</span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-9 w-9">
+                            <Users className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64">
+                          <div className="grid gap-4">
+                            <div className="space-y-2">
+                              <h4 className="font-medium leading-none font-headline">Split Item</h4>
+                              <p className="text-sm text-muted-foreground">
+                                Assign this item to participants.
+                              </p>
+                            </div>
+                            <Separator />
+                             <Button variant="ghost" size="sm" onClick={() => assignItemToAll(item.id)} className="justify-start -mx-2">
+                                 Assign to Everyone
+                             </Button>
+                             <Separator />
+                            <div className="grid gap-2">
+                              {participants.map(p => (
+                                <div key={p.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary transition-colors">
+                                  <Checkbox
+                                    id={`check-${item.id}-${p.id}`}
+                                    checked={item.participantIds.includes(p.id)}
+                                    onCheckedChange={() => toggleItemParticipant(item.id, p.id)}
+                                  />
+                                  <label htmlFor={`check-${item.id}-${p.id}`} className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    {p.name}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          <Separator />
-                           <Button variant="ghost" size="sm" onClick={() => assignItemToAll(item.id)} className="justify-start -mx-2">
-                               Assign to Everyone
-                           </Button>
-                           <Separator />
-                          <div className="grid gap-2">
-                            {participants.map(p => (
-                              <div key={p.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary transition-colors">
-                                <Checkbox
-                                  id={`check-${item.id}-${p.id}`}
-                                  checked={item.participantIds.includes(p.id)}
-                                  onCheckedChange={() => toggleItemParticipant(item.id, p.id)}
-                                />
-                                <label htmlFor={`check-${item.id}-${p.id}`} className="flex-1 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                  {p.name}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive h-9 w-9" onClick={() => removeItem(item.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                        </PopoverContent>
+                      </Popover>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive h-9 w-9" onClick={() => removeItem(item.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </ScrollArea>
