@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Bill, BillItem, Participant } from '@/lib/types';
+import { Bill, BillItem, Participant, BillHistoryEntry } from '@/lib/types';
 import { getIconForItem } from '@/lib/icon-mapping';
 import { db } from '@/lib/firebase';
 import {
@@ -20,6 +20,8 @@ import {
 } from 'firebase/firestore';
 import { useDebouncedCallback } from 'use-debounce';
 
+const MAX_HISTORY_LENGTH = 20;
+
 export function useBillState(billId: string) {
   const [bill, setBill] = useState<Bill | null>(null);
   const [items, setItems] = useState<BillItem[]>([]);
@@ -27,14 +29,47 @@ export function useBillState(billId: string) {
   
   const billDocRef = useMemo(() => doc(db, 'bills', billId), [billId]);
 
+  const updateHistory = useCallback((billData: Bill) => {
+    try {
+      const historyString = localStorage.getItem('billHistory');
+      let history: BillHistoryEntry[] = historyString ? JSON.parse(historyString) : [];
+      
+      const existingIndex = history.findIndex(entry => entry.id === billData.id);
+      
+      const newEntry: BillHistoryEntry = {
+        id: billData.id,
+        title: billData.title,
+        date: billData.date,
+        accessedAt: new Date().toISOString()
+      };
+
+      if (existingIndex > -1) {
+        history.splice(existingIndex, 1);
+      }
+      
+      history.unshift(newEntry);
+      
+      if (history.length > MAX_HISTORY_LENGTH) {
+        history = history.slice(0, MAX_HISTORY_LENGTH);
+      }
+
+      localStorage.setItem('billHistory', JSON.stringify(history));
+    } catch (error) {
+      console.error("Failed to update bill history:", error);
+    }
+  }, []);
+
+
   useEffect(() => {
     if (!billId) return;
 
     const unsubBill = onSnapshot(billDocRef, async (docSnapshot) => {
       if (docSnapshot.exists()) {
-        setBill({ id: docSnapshot.id, ...docSnapshot.data() } as Bill);
+        const billData = { id: docSnapshot.id, ...docSnapshot.data() } as Bill;
+        setBill(billData);
+        updateHistory(billData);
       } else {
-        const newBill = {
+        const newBill: Bill = {
           id: billId,
           title: 'Untitled Bill',
           date: new Date().toISOString(),
@@ -42,6 +77,7 @@ export function useBillState(billId: string) {
         };
         await setDoc(billDocRef, newBill);
         setBill(newBill);
+        updateHistory(newBill);
       }
     });
 
@@ -75,10 +111,15 @@ export function useBillState(billId: string) {
       unsubParticipants();
       unsubItems();
     };
-  }, [billId, billDocRef]);
+  }, [billId, billDocRef, updateHistory]);
   
   const debouncedUpdateBill = useDebouncedCallback(async (updates: Partial<Bill>) => {
     await updateDoc(billDocRef, updates);
+     if (bill) {
+      const updatedBill = { ...bill, ...updates };
+      setBill(updatedBill);
+      updateHistory(updatedBill);
+    }
   }, 500);
 
   const updateBill = useCallback((updates: Partial<Bill>) => {

@@ -20,3 +20,10 @@ export interface Participant {
   id: string;
   name: string;
 }
+
+export interface BillHistoryEntry {
+    id: string;
+    title: string;
+    date: string;
+    accessedAt: string;
+}

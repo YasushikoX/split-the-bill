@@ -3,12 +3,14 @@
 import { createBillSession } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FilePlus2 } from 'lucide-react';
+import { FilePlus2, History } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useEffect, useState } from 'react';
+import { HistoryDialog } from '@/components/bill/history-dialog';
 
 export default function Home() {
   const [year, setYear] = useState(new Date().getFullYear());
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   useEffect(() => {
     setYear(new Date().getFullYear());
@@ -19,7 +21,7 @@ export default function Home() {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="items-center text-center">
           <Logo className="h-16 w-16 mb-4" />
-          <CardTitle className="font-headline text-4xl font-bold text-accent">Split The Bill</CardTitle>
+          <CardTitle className="font-headline text-4xl font-bold text-primary">Split The Bill</CardTitle>
           <CardDescription className="text-lg text-muted-foreground pt-2">
             The simplest way to divide expenses with friends.
           </CardDescription>
@@ -28,17 +30,24 @@ export default function Home() {
           <p className="mb-6 text-center text-sm text-muted-foreground">
             Create a session, add your items, and share the link. It's that easy.
           </p>
-          <form action={createBillSession} className="w-full">
-            <Button size="lg" className="w-full text-lg font-semibold" variant="default">
-              <FilePlus2 className="mr-2 h-5 w-5" />
-              Create a New Bill
+          <div className="w-full flex flex-col sm:flex-row gap-2">
+            <form action={createBillSession} className="w-full">
+              <Button size="lg" className="w-full text-lg font-semibold" variant="default">
+                <FilePlus2 className="mr-2 h-5 w-5" />
+                Create a New Bill
+              </Button>
+            </form>
+            <Button size="lg" variant="outline" className="text-lg" onClick={() => setIsHistoryOpen(true)}>
+              <History className="mr-2 h-5 w-5" />
+              History
             </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
       <footer className="mt-8 text-center text-sm text-muted-foreground">
         <p>&copy; {year} Split The Bill. All rights reserved.</p>
       </footer>
+      <HistoryDialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen} />
     </div>
   );
 }
