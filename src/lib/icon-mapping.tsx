@@ -14,29 +14,62 @@ import {
   Film,
   LucideIcon,
   Shirt,
+  Martini,
+  Beef,
+  Trophy,
+  Sandwich,
+  Cake,
 } from 'lucide-react';
 
 export const iconMap: Record<string, LucideIcon> = {
+  // Food & Drink
   pizza: Pizza,
   food: Pizza,
+  burger: Sandwich,
+  sandwich: Sandwich,
+  sushi: Beef,
+  tacos: Beef,
+  snack: Cake,
+  dessert: Cake,
   water: GlassWater,
   drinks: GlassWater,
   wine: Wine,
   beer: Beer,
+  cocktail: Martini,
+  bar: Martini,
   coffee: Coffee,
-  groceries: ShoppingBasket,
-  tickets: Ticket,
-  movie: Film,
+
+  // Transportation
   taxi: Car,
+  uber: Car,
+  lyft: Car,
+  cab: Car,
   parking: Car,
   fuel: Car,
-  hotel: Hotel,
-  accommodation: Hotel,
   flights: Plane,
   plane: Plane,
+
+  // Entertainment & Activities
+  tickets: Ticket,
+  movie: Film,
+  concert: Ticket,
+  show: Ticket,
+  bowling: Trophy,
+  activity: Trophy,
+
+  // Accommodation
+  hotel: Hotel,
+  accommodation: Hotel,
+  
+  // Shopping & Gifts
+  groceries: ShoppingBasket,
+  shopping: ShoppingBasket,
+  store: ShoppingBasket,
   gift: Gift,
   present: Gift,
   clothes: Shirt,
+
+  // Default
   default: ReceiptText,
 };
 
