@@ -17,7 +17,7 @@ export interface BillItem {
 }
 
 export interface Participant {
-  id: string;
+  id:string;
   name: string;
 }
 
