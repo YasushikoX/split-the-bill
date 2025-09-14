@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { ReceiptText, Trash2, Users } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '../ui/label';
 
 type BillItemsListProps = {
@@ -90,18 +90,18 @@ export function BillItemsList({ items, participants, removeItem, toggleItemParti
                             <Separator />
                             <div className="grid gap-2">
                                 <h5 className="font-medium text-sm">Paid By</h5>
-                                <RadioGroup
-                                    value={item.paidById}
-                                    onValueChange={(newPaidById) => updateItem(item.id, { paidById: newPaidById })}
-                                    className="grid gap-1 -mx-2"
-                                >
+                                 <Select 
+                                  value={item.paidById} 
+                                  onValueChange={(newPaidById) => updateItem(item.id, { paidById: newPaidById })}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select Payer" />
+                                  </SelectTrigger>
+                                  <SelectContent>
                                     {participants.map(p => (
-                                        <Label key={`paid-${p.id}`} htmlFor={`paid-${item.id}-${p.id}`} className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary transition-colors cursor-pointer">
-                                            <RadioGroupItem value={p.id} id={`paid-${item.id}-${p.id}`} />
-                                            <span className="flex-1 text-sm font-medium leading-none">{p.name}</span>
-                                        </Label>
+                                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                                     ))}
-                                </RadioGroup>
+                                  </SelectContent>
+                                </Select>
                             </div>
                             <Separator />
                              <div className="grid gap-2">
